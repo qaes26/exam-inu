@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>امتحان إدارة قواعد البيانات</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Visualization & Content Choices:
+        - Report Info: Core concepts from Chapter 5 (Information Accuracy, Data Hierarchy, Traditional Problems, DBMS Models, Components) -> Goal: Assess Understanding -> Viz: Textual questions with radio button choices. -> Interaction: Click radio button to select, click "Next" to advance, click "Submit" to finish. -> Justification: Standard quiz format for knowledge assessment. Method: HTML, Tailwind, Vanilla JS.
+        - Report Info: Exam Results -> Goal: Inform -> Viz: Score display, list of questions with user's answer and correct answer. -> Interaction: None, review only. -> Justification: Provides clear feedback on performance. Method: HTML, Tailwind, Vanilla JS.
+        - CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <style>
+        body {
+            font-family: 'system-ui', 'sans-serif';
+        }
+        .section-hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white shadow-lg rounded-lg p-6 md:p-8 w-full max-w-2xl">
+
+        <div id="intro-section" class="text-center">
+            <h1 class="text-3xl font-bold text-indigo-700 mb-2">امتحان في إدارة قواعد البيانات</h1>
+            <p class="text-md text-gray-500 mb-4">من إعداد الطالب: قيس طلال غالب الجازي</p>
+            <p class="text-lg text-gray-600 mb-6">اختبر فهمك للمفاهيم الأساسية في الفصل الخامس.</p>
+            <button id="start-exam-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300">
+                ابدأ الامتحان
+            </button>
+        </div>
+
+        <div id="exam-section" class="section-hidden">
+            <h2 class="text-2xl font-semibold text-indigo-600 mb-4">السؤال <span id="current-question-number">1</span> من <span id="total-questions"></span></h2>
+            <p id="question-text" class="text-xl mb-6 leading-relaxed"></p>
+            <div id="answers-container" class="space-y-4 mb-6">
+                </div>
+            <div class="flex justify-between">
+                <button id="next-question-btn" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg shadow-sm transition duration-300">
+                    السؤال التالي
+                </button>
+                <button id="submit-exam-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-sm transition duration-300 section-hidden">
+                    إنهاء الامتحان
+                </button>
+            </div>
+        </div>
+
+        <div id="results-section" class="section-hidden">
+            <h2 class="text-3xl font-bold text-indigo-700 mb-4 text-center">نتائج الامتحان</h2>
+            <p class="text-xl text-gray-700 mb-6 text-center">لقد حصلت على <span id="score-display" class="font-bold text-indigo-600"></span> من <span id="total-score-display" class="font-bold text-indigo-600"></span></p>
+            <div id="results-details" class="space-y-4">
+                </div>
+            <button id="restart-exam-btn" class="mt-8 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300">
+                إعادة الامتحان
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        const questions = [
+            {
+                question: "ما هو الغرض الأساسي من أنظمة المعلومات وفقاً للفصل؟",
+                answers: [
+                    "تخزين البيانات فقط.",
+                    "تزويد المستخدمين بالمعلومات الدقيقة ذات الصلة في الوقت المناسب.",
+                    "إنشاء تقارير مالية معقدة.",
+                    "إدارة الموظفين فقط."
+                ],
+                correctAnswer: "تزويد المستخدمين بالمعلومات الدقيقة ذات الصلة في الوقت المناسب."
+            },
+            {
+                question: "كيف تُعرّف المعلومات الدقيقة في سياق الفصل؟",
+                answers: [
+                    "المعلومات التي تحتوي على تكرار.",
+                    "المعلومات الخالية من الأخطاء مثل التكرار وعدم التنسيق.",
+                    "المعلومات التي تتوفر متأخرة.",
+                    "المعلومات غير المفيدة لصانعي القرار."
+                ],
+                correctAnswer: "المعلومات الخالية من الأخطاء مثل التكرار وعدم التنسيق."
+            },
+            {
+                question: "ماذا يعني التكرار (Redundancy) في المعلومات؟",
+                answers: [
+                    "أن المعلومات متوفرة في وقتها.",
+                    "وجود نفس المعلومة في أكثر من مكان.",
+                    "أن المعلومة مفيدة لاتخاذ القرار.",
+                    "خلو المعلومة من الأخطاء."
+                ],
+                correctAnswer: "وجود نفس المعلومة في أكثر من مكان."
+            },
+            {
+                question: "ما هي النتيجة المباشرة للتكرار في البيانات؟",
+                answers: [
+                    "زيادة كفاءة النظام.",
+                    "عدم تناسق البيانات.",
+                    "تحسين أمن الملفات.",
+                    "سهولة استحداث التقارير."
+                ],
+                correctAnswer: "عدم تناسق البيانات."
+            },
+            {
+                question: "ماذا تعني المعلومات ذات الصلة (Relevant Information)؟",
+                answers: [
+                    "أنها معلومات قديمة.",
+                    "أنها معلومات غير دقيقة.",
+                    "أنها مفيدة لصانعي القرار ولإتمام العمل.",
+                    "أنها معلومات مكررة."
+                ],
+                correctAnswer: "أنها مفيدة لصانعي القرار ولإتمام العمل."
+            },
+            {
+                question: "ماذا تعني المعلومات في الوقت المناسب (Timely Information)؟",
+                answers: [
+                    "أنها تتوفر لصانعي القرار عندما يحتاجونها.",
+                    "أنها معلومات دقيقة فقط.",
+                    "أنها معلومات ذات صلة فقط.",
+                    "أنها معلومات يصعب الوصول إليها."
+                ],
+                correctAnswer: "أنها تتوفر لصانعي القرار عندما يحتاجونها."
+            },
+            {
+                question: "إحدى العمليات الأساسية التي يمكن للمستخدمين القيام بها على البيانات المحفوظة والمنظمة جيداً هي:",
+                answers: [
+                    "تدمير البيانات.",
+                    "تخزين البيانات.",
+                    "إهمال البيانات.",
+                    "إخفاء البيانات."
+                ],
+                correctAnswer: "تخزين البيانات."
+            },
+            {
+                question: "ما هي أصغر وحدة تخزين يمكن للحاسوب تخزينها؟",
+                answers: [
+                    "البايت (Byte)",
+                    "الحقل (Field)",
+                    "البت (Bit)",
+                    "السجل (Record)"
+                ],
+                correctAnswer: "البت (Bit)"
+            },
+            {
+                question: "كم عدد البتات التي يتكون منها البايت (Byte) الواحد؟",
+                answers: [
+                    "4 بتات.",
+                    "8 بتات.",
+                    "16 بت.",
+                    "32 بت."
+                ],
+                correctAnswer: "8 بتات."
+            },
+            {
+                question: "ما هي أكبر قيمة يمكن تخزينها في بايت واحد (بالنظام العشري)؟",
+                answers: [
+                    "127",
+                    "255",
+                    "511",
+                    "1023"
+                ],
+                correctAnswer: "255"
+            },
+            {
+                question: "ما هو تعريف الحقل (Field)؟",
+                answers: [
+                    "مجموعة من السجلات.",
+                    "مجموعة من البتات تمثل معلومة واحدة.",
+                    "مجموعة من الملفات.",
+                    "أصغر وحدة تخزين."
+                ],
+                correctAnswer: "مجموعة من البتات تمثل معلومة واحدة."
+            },
+            {
+                question: "ما الذي يتكون منه السجل (Record)؟",
+                answers: [
+                    "مجموعة من الملفات.",
+                    "مجموعة من البتات.",
+                    "مجموعة من الحقول المترابطة.",
+                    "مجموعة من قواعد البيانات."
+                ],
+                correctAnswer: "مجموعة من الحقول المترابطة."
+            },
+            {
+                question: "ما هو تعريف الملف (File)؟",
+                answers: [
+                    "مجموعة من قواعد البيانات.",
+                    "مجموعة من السجلات ذات النوع الواحد.",
+                    "مجموعة من الحقول غير المترابطة.",
+                    "أصغر وحدة بيانات."
+                ],
+                correctAnswer: "مجموعة من السجلات ذات النوع الواحد."
+            },
+            {
+                question: "ما الذي يتكون منه قاعدة البيانات (Database)؟",
+                answers: [
+                    "ملف واحد فقط.",
+                    "مجموعة من الملفات المترابطة.",
+                    "مجموعة من البتات العشوائية.",
+                    "مجموعة من البرامج التطبيقية."
+                ],
+                correctAnswer: "مجموعة من الملفات المترابطة."
+            },
+            {
+                question: "ماذا يصف الكيان (Entity)؟",
+                answers: [
+                    "خاصية للبيانات.",
+                    "شخص، مكان، شيء، أو حدث يمكن وصفها بمعلومات محددة.",
+                    "علاقة بين جداول.",
+                    "لغة برمجة."
+                ],
+                correctAnswer: "شخص، مكان، شيء، أو حدث يمكن وصفها بمعلومات محددة."
+            },
+            {
+                question: "ماذا تسمى كل خاصية يمكن أن تصف بها الكينونة؟",
+                answers: [
+                    "سجل.",
+                    "ملف.",
+                    "سمة (Attribute).",
+                    "بايت."
+                ],
+                correctAnswer: "سمة (Attribute)."
+            },
+            {
+                question: "في مثال ملف المواد الدراسية، ماذا يمثل 'ملف المواد الدراسية'؟",
+                answers: [
+                    "سمة.",
+                    "حقل.",
+                    "كينونة (Entity).",
+                    "سجل."
+                ],
+                correctAnswer: "كينونة (Entity)."
+            },
+            {
+                question: "في مثال ملف المواد الدراسية، ماذا يمثل 'رقم الطالب' أو 'العلامة'؟",
+                answers: [
+                    "كينونة.",
+                    "سجل.",
+                    "ملف.",
+                    "خاصية (Attribute)."
+                ],
+                correctAnswer: "خاصية (Attribute)."
+            },
+            {
+                question: "ما هي إحدى المشاكل الرئيسية في بيئة الملفات التقليدية التي تنتج عن تخزين نفس البيانات في أكثر من موقع؟",
+                answers: [
+                    "سهولة المشاركة في البيانات.",
+                    "مرونة عالية في استحداث التقارير.",
+                    "تكرار البيانات.",
+                    "استقلالية البرنامج عن البيانات."
+                ],
+                correctAnswer: "تكرار البيانات."
+            },
+            {
+                question: "ما هي النتيجة المباشرة لتكرار البيانات التي تهدر الموارد التخزينية؟",
+                answers: [
+                    "تحسين أداء النظام.",
+                    "عدم تناسق البيانات.",
+                    "زيادة أمن المعلومات.",
+                    "تبسيط إدارة البيانات."
+                ],
+                correctAnswer: "عدم تناسق البيانات."
+            },
+            {
+                question: "ماذا يعني 'ارتباط البرنامج مع البيانات' في الأنظمة التقليدية؟",
+                answers: [
+                    "أن البرامج يمكنها الوصول إلى البيانات بسهولة.",
+                    "أن أي تغيير في البرمجيات يؤثر على البيانات والعكس صحيح.",
+                    "أن البيانات مستقلة عن البرامج.",
+                    "أن البرامج تستخدم لغات استعلام قياسية."
+                ],
+                correctAnswer: "أن أي تغيير في البرمجيات يؤثر على البيانات والعكس صحيح."
+            },
+            {
+                question: "مثال على تبعية البرنامج للبيانات هو:",
+                answers: [
+                    "استخدام SQL لاسترجاع البيانات.",
+                    "تغيير طول الرمز البريدي يتطلب تعديل جميع البرامج التي تستخدمه.",
+                    "تخزين الصور والفيديو في قاعدة البيانات.",
+                    "وجود مفتاح أساسي ومفتاح أجنبي."
+                ],
+                correctAnswer: "تغيير طول الرمز البريدي يتطلب تعديل جميع البرامج التي تستخدمه."
+            },
+            {
+                question: "ما هي المشكلة التي تتعلق بصعوبة إنشاء تقارير جديدة أو استفسارات غير متوقعة في بيئة الملفات التقليدية؟",
+                answers: [
+                    "تكرار البيانات.",
+                    "ضعف أمن الملفات.",
+                    "صعوبة استحداث تقارير متنوعة وغير متوقعة.",
+                    "سهولة المشاركة في البيانات."
+                ],
+                correctAnswer: "صعوبة استحداث تقارير متنوعة وغير متوقعة."
+            },
+            {
+                question: "لماذا يصعب تطبيق قواعد أمنية على البيانات في أنظمة الملفات التقليدية؟",
+                answers: [
+                    "لأن البيانات مركزية.",
+                    "لأنها تعتمد على المبرمج لضمان الأمن وصعوبة تطبيقها برمجياً.",
+                    "لأنها تستخدم نظام إدارة قواعد البيانات.",
+                    "لأنها توفر مناظير منطقية متعددة."
+                ],
+                correctAnswer: "لأنها تعتمد على المبرمج لضمان الأمن وصعوبة تطبيقها برمجياً."
+            },
+            {
+                question: "ما هي النتيجة النهائية لمشاكل أنظمة الملفات التقليدية على المستخدمين؟",
+                answers: [
+                    "زيادة ثقتهم بالأنظمة.",
+                    "عدم استخدامهم لهذه الأنظمة بسبب عدم ثقتهم بها.",
+                    "زيادة كفاءة العمليات.",
+                    "تحسين جودة المعلومات."
+                ],
+                correctAnswer: "عدم استخدامهم لهذه الأنظمة بسبب عدم ثقتهم بها."
+            },
+            {
+                question: "ماذا يمثل الشكل (5.2) في الفصل؟",
+                answers: [
+                    "هيكلية البيانات الهرمية.",
+                    "المعالجة التقليدية للبيانات.",
+                    "مكونات نظام إدارة قواعد البيانات.",
+                    "قاعدة بيانات علائقية."
+                ],
+                correctAnswer: "المعالجة التقليدية للبيانات."
+            },
+            {
+                question: "كيف تُعرّف قاعدة البيانات كحل لمشاكل الأنظمة التقليدية؟",
+                answers: [
+                    "مجموعة من البيانات العشوائية.",
+                    "مجموعة من البيانات المنظمة والمترابطة لتخدم التطبيقات بواسطة مركزية التحكم وعدم تكرار البيانات.",
+                    "ملف واحد كبير يحتوي على جميع البيانات.",
+                    "برنامج حاسوبي خاص بكل تطبيق."
+                ],
+                correctAnswer: "مجموعة من البيانات المنظمة والمترابطة لتخدم التطبيقات بواسطة مركزية التحكم وعدم تكرار البيانات."
+            },
+            {
+                question: "مثال على مركزية البيانات في قاعدة البيانات بدلاً من الملفات المنفصلة هو:",
+                answers: [
+                    "كل قسم يحتفظ بملفاته الخاصة.",
+                    "إنشاء قاعدة بيانات واحدة للموارد البشرية تضم معلومات الموظفين لكل الأقسام.",
+                    "تغيير الرمز البريدي في كل ملف على حدة.",
+                    "صعوبة مشاركة البيانات بين الأقسام."
+                ],
+                correctAnswer: "إنشاء قاعدة بيانات واحدة للموارد البشرية تضم معلومات الموظفين لكل الأقسام."
+            },
+            {
+                question: "ما هو تعريف نظام إدارة قاعدة البيانات (DBMS)؟",
+                answers: [
+                    "مجموعة من الملفات غير المترابطة.",
+                    "البرنامج أو مجموعة البرامج التي تدير قاعدة البيانات.",
+                    "لغة برمجة تستخدم لإنشاء التقارير.",
+                    "جهاز تخزين البيانات."
+                ],
+                correctAnswer: "البرنامج أو مجموعة البرامج التي تدير قاعدة البيانات."
+            },
+            {
+                question: "ما هي وظيفة نظام إدارة قاعدة البيانات كحلقة وصل؟",
+                answers: [
+                    "يربط المستخدمين مباشرة بملفات البيانات الفيزيائية.",
+                    "يعمل كحلقة وصل بين البرامج التطبيقية وملفات البيانات.",
+                    "يزيد من تبعية البرنامج للبيانات.",
+                    "يمنع المستخدمين من الوصول إلى المعلومات."
+                ],
+                correctAnswer: "يعمل كحلقة وصل بين البرامج التطبيقية وملفات البيانات."
+            },
+            {
+                question: "ما هما المنظوران اللذان يفصل بينهما نظام إدارة قاعدة البيانات؟",
+                answers: [
+                    "المنظور القديم والمنظور الحديث.",
+                    "منظور البيانات المنطقي والبيانات المادية.",
+                    "منظور المستخدم ومنظور المبرمج.",
+                    "منظور الإدخال ومنظور الإخراج."
+                ],
+                correctAnswer: "منظور البيانات المنطقي والبيانات المادية."
+            },
+            {
+                question: "المنظور الذي يصف كيف يرى المستخدم أو البرنامج التطبيقي البيانات هو:",
+                answers: [
+                    "المنظور المادي.",
+                    "المنظور الفيزيائي.",
+                    "المنظور المنطقي.",
+                    "المنظور التشغيلي."
+                ],
+                correctAnswer: "المنظور المنطقي."
+            },
+            {
+                question: "المنظور الذي يصف كيفية تخزين البيانات وتنظيمها فعليًا على وسائط التخزين هو:",
+                answers: [
+                    "المنظور المنطقي.",
+                    "المنظور المفاهيمي.",
+                    "المنظور المادي.",
+                    "المنظور التجريدي."
+                ],
+                correctAnswer: "المنظور المادي."
+            },
+            {
+                question: "ما هو أكثر أنواع نماذج قواعد البيانات شيوعاً ويستخدم على مستوى الحواسيب الشخصية والكبيرة؟",
+                answers: [
+                    "النموذج الهرمي.",
+                    "النموذج الشبكي.",
+                    "النموذج العلائقي (RDBMS).",
+                    "النموذج الشيئي (OODBMS)."
+                ],
+                correctAnswer: "النموذج العلائقي (RDBMS)."
+            },
+            {
+                question: "كيف تمثل البيانات في النموذج العلائقي (Relational Model)؟",
+                answers: [
+                    "على شكل شجرة.",
+                    "على شكل شبكة معقدة.",
+                    "على شكل جداول ذات بعدين تسمى العلاقات.",
+                    "على شكل كائنات."
+                ],
+                correctAnswer: "على شكل جداول ذات بعدين تسمى العلاقات."
+            },
+            {
+                question: "ما هو تعريف المفتاح الأساسي (Primary Key) في النموذج العلائقي؟",
+                answers: [
+                    "حقل يربط بين جدولين.",
+                    "حقل قيمته تتكرر في السجلات المختلفة.",
+                    "حقل يميز بشكل منفرد كل سجل على حدى ولا يمكن أن يكون فارغاً.",
+                    "حقل يستخدم لتخزين الصور فقط."
+                ],
+                correctAnswer: "حقل يميز بشكل منفرد كل سجل على حدى ولا يمكن أن يكون فارغاً."
+            },
+            {
+                question: "ما هو تعريف المفتاح الأجنبي (Foreign Key) في النموذج العلائقي؟",
+                answers: [
+                    "حقل يميز السجل بشكل فريد في نفس الجدول.",
+                    "حقل لا يمكن أن تكون قيمته فارغة.",
+                    "حقل في جدول يشير إلى المفتاح الأساسي في جدول آخر.",
+                    "حقل يستخدم لترتيب البيانات."
+                ],
+                correctAnswer: "حقل في جدول يشير إلى المفتاح الأساسي في جدول آخر."
+            },
+            {
+                question: "كيف تنظم البيانات في النموذج الهرمي؟",
+                answers: [
+                    "على شكل جداول.",
+                    "على شكل شبكة معقدة.",
+                    "على شكل شجرة، حيث كل سجل ابن له أب واحد فقط.",
+                    "على شكل كائنات مستقلة."
+                ],
+                correctAnswer: "على شكل شجرة، حيث كل سجل ابن له أب واحد فقط."
+            },
+            {
+                question: "ما هي العلاقة الأساسية بين الآباء والأبناء في النموذج الهرمي؟",
+                answers: [
+                    "متعدد-إلى-متعدد (Many-to-Many).",
+                    "واحد-إلى-واحد (One-to-One).",
+                    "واحد-إلى-متعدد (One-to-Many).",
+                    "لا توجد علاقة محددة."
+                ],
+                correctAnswer: "واحد-إلى-متعدد (One-to-Many)."
+            },
+            {
+                question: "إحدى عيوب النموذج الهرمي هي:",
+                answers: [
+                    "سهولة استرجاع البيانات.",
+                    "عدم تكرار البيانات.",
+                    "صعوبة استرجاع بعض البيانات التي لا تتبع المسار الهرمي، وتكرار السجلات الأبناء.",
+                    "قدرته على تخزين الصور."
+                ],
+                correctAnswer: "صعوبة استرجاع بعض البيانات التي لا تتبع المسار الهرمي، وتكرار السجلات الأبناء."
+            },
+            {
+                question: "ما هي الميزة الرئيسية لنموذج شبكة قاعدة البيانات مقارنة بالنموذج الهرمي؟",
+                answers: [
+                    "أنه أبسط في البناء.",
+                    "إمكانية تخزين السجلات بدون تكرار والسماح بعلاقات متعدد-إلى-متعدد.",
+                    "أنه أبطأ في المعالجة.",
+                    "أنه يعتمد على المفاتيح الأساسية فقط."
+                ],
+                correctAnswer: "إمكانية تخزين السجلات بدون تكرار والسماح بعلاقات متعدد-إلى-متعدد."
+            },
+            {
+                question: "ما هي العلاقة بين السجلات التي يسمح بها النموذج الشبكي؟",
+                answers: [
+                    "واحد-إلى-واحد فقط.",
+                    "واحد-إلى-متعدد فقط.",
+                    "متعدد-إلى-متعدد (Many-to-Many).",
+                    "لا توجد علاقات."
+                ],
+                correctAnswer: "متعدد-إلى-متعدد (Many-to-Many)."
+            },
+            {
+                question: "ما هو العيب الرئيسي لنموذج شبكة قاعدة البيانات الذي حد من استخدامه؟",
+                answers: [
+                    "بساطته الشديدة.",
+                    "قدرته على تخزين أنواع بيانات معقدة.",
+                    "بناء وتنظيم معقد، وعملية استرجاع البيانات ليست سهلة.",
+                    "عدم وجود مفاتيح أجنبية."
+                ],
+                correctAnswer: "بناء وتنظيم معقد، وعملية استرجاع البيانات ليست سهلة."
+            },
+            {
+                question: "ما هي أنواع البيانات التي يتفوق نظام إدارة قاعدة البيانات الشيئية (OODBMS) في تخزينها واسترجاعها؟",
+                answers: [
+                    "الأرقام والحروف فقط.",
+                    "الصور، الصوتيات، والفيديو.",
+                    "الجداول ذات البعدين.",
+                    "السجلات الهرمية."
+                ],
+                correctAnswer: "الصور، الصوتيات، والفيديو."
+            },
+            {
+                question: "ما هو العيب الرئيسي لـ OODBMS مقارنة بـ RDBMS؟",
+                answers: [
+                    "قدرته على تخزين أنواع بيانات أكثر تعقيداً.",
+                    "أنه أسرع في معالجة أعداد كبيرة من السجلات أو الإجراءات.",
+                    "أنه بطيء بالمقارنة مع RDBMS من ناحية معالجة أعداد كبيرة من السجلات أو الإجراءات.",
+                    "أنه لا يدعم الكائنات."
+                ],
+                correctAnswer: "أنه بطيء بالمقارنة مع RDBMS من ناحية معالجة أعداد كبيرة من السجلات أو الإجراءات."
+            },
+            {
+                question: "قاعدة البيانات التي تدعم مستخدم واحد في وحدة الزمن تسمى:",
+                answers: [
+                    "قاعدة بيانات موزعة.",
+                    "قاعدة بيانات متعددة المستخدمين.",
+                    "قاعدة بيانات مخصصة لمستخدم واحد (Single User Database).",
+                    "مستودع بيانات."
+                ],
+                correctAnswer: "قاعدة بيانات مخصصة لمستخدم واحد (Single User Database)."
+            },
+            {
+                question: "قاعدة البيانات المتعددة المستخدمين التي يستخدمها مجموعة صغيرة من المستخدمين أو قسم واحد تسمى:",
+                answers: [
+                    "قاعدة بيانات للمشاريع الكبيرة.",
+                    "قاعدة بيانات مركزية.",
+                    "قاعدة بيانات مخصصة لمجموعة عمل (Workgroup Database).",
+                    "قاعدة بيانات تشغيلية."
+                ],
+                correctAnswer: "قاعدة بيانات مخصصة لمجموعة عمل (Workgroup Database)."
+            },
+            {
+                question: "قاعدة البيانات التي تخزن جميع البيانات في موقع واحد تسمى:",
+                answers: [
+                    "قاعدة بيانات موزعة.",
+                    "قاعدة بيانات مركزية (Centralized Database).",
+                    "مستودع بيانات.",
+                    "قاعدة بيانات متعددة المستخدمين."
+                ],
+                correctAnswer: "قاعدة بيانات مركزية (Centralized Database)."
+            },
+            {
+                question: "قاعدة البيانات التي تدعم البيانات التي تكون في أكثر من موقع تسمى:",
+                answers: [
+                    "قاعدة بيانات مركزية.",
+                    "قاعدة بيانات موزعة (Distributed Database).",
+                    "قاعدة بيانات تشغيلية.",
+                    "قاعدة بيانات لمستخدم واحد."
+                ],
+                correctAnswer: "قاعدة بيانات موزعة (Distributed Database)."
+            },
+            {
+                question: "قاعدة البيانات المصممة لمعالجة عمليات المنظمة اليومية كالمبيعات والمشتريات تسمى:",
+                answers: [
+                    "مستودع بيانات.",
+                    "قاعدة بيانات تشغيلية أو حركية (Operational or Transactional Database).",
+                    "قاعدة بيانات مركزية.",
+                    "قاعدة بيانات لمجموعة عمل."
+                ],
+                correctAnswer: "قاعدة بيانات تشغيلية أو حركية (Operational or Transactional Database)."
+            },
+            {
+                question: "ما هو الغرض الأساسي من مستودع البيانات (Data Warehouse)؟",
+                answers: [
+                    "معالجة العمليات اليومية بسرعة.",
+                    "تخزين البيانات التي تستخدم لاتخاذ قرارات قصيرة وبعيدة الأجل.",
+                    "تخزين البيانات في موقع واحد فقط.",
+                    "دعم مستخدم واحد فقط."
+                ],
+                correctAnswer: "تخزين البيانات التي تستخدم لاتخاذ قرارات قصيرة وبعيدة الأجل."
+            },
+            {
+                question: "ما هي إحدى المكونات الرئيسية لنظام إدارة قاعدة البيانات؟",
+                answers: [
+                    "برنامج الرسام.",
+                    "وظيفة تعريف البيانات (Data Definition Function).",
+                    "برنامج تحرير النصوص.",
+                    "نظام التشغيل."
+                ],
+                correctAnswer: "وظيفة تعريف البيانات (Data Definition Function)."
+            },
+            {
+                question: "ما هي اللغة التي تستخدم لتعريف بنية محتويات قاعدة البيانات (مثل بناء الجداول وتعريف خصائص الحقول)؟",
+                answers: [
+                    "لغة معالجة البيانات (DML).",
+                    "لغة الاستعلام الهيكلية (SQL).",
+                    "لغة تعريف البيانات (DDL).",
+                    "لغة البرمجة C++."
+                ],
+                correctAnswer: "لغة تعريف البيانات (DDL)."
+            },
+            {
+                question: "ماذا يحتوي قاموس البيانات (Data Dictionary)؟",
+                answers: [
+                    "بيانات العملاء فقط.",
+                    "جميع المعلومات المتعلقة ببناء قاعدة البيانات (Metadata).",
+                    "التقارير النهائية فقط.",
+                    "البرامج التطبيقية."
+                ],
+                correctAnswer: "جميع المعلومات المتعلقة ببناء قاعدة البيانات (Metadata)."
+            },
+            {
+                question: "ما هي اللغة القياسية المستخدمة للتفاعل مع قواعد البيانات المترابطة لإضافة، تغيير، مسح، واسترجاع البيانات؟",
+                answers: [
+                    "لغة جافا (Java).",
+                    "لغة بايثون (Python).",
+                    "لغة الاستعلام الهيكلية (SQL).",
+                    "لغة HTML."
+                ],
+                correctAnswer: "لغة الاستعلام الهيكلية (SQL)."
+            },
+            {
+                question: "أي من الأوامر التالية يستخدم لاسترجاع البيانات في SQL؟",
+                answers: [
+                    "INSERT",
+                    "UPDATE",
+                    "DELETE",
+                    "SELECT"
+                ],
+                correctAnswer: "SELECT"
+            },
+            {
+                question: "أي من الأوامر التالية يستخدم لإضافة بيانات جديدة في SQL؟",
+                answers: [
+                    "SELECT",
+                    "UPDATE",
+                    "INSERT",
+                    "DELETE"
+                ],
+                correctAnswer: "INSERT"
+            },
+            {
+                question: "أي من الأوامر التالية يستخدم لتحديث البيانات الموجودة في SQL؟",
+                answers: [
+                    "SELECT",
+                    "UPDATE",
+                    "INSERT",
+                    "DELETE"
+                ],
+                correctAnswer: "UPDATE"
+            },
+            {
+                question: "أي من الأوامر التالية يستخدم لحذف البيانات في SQL؟",
+                answers: [
+                    "SELECT",
+                    "UPDATE",
+                    "INSERT",
+                    "DELETE"
+                ],
+                correctAnswer: "DELETE"
+            },
+            {
+                question: "ما هي إحدى فوائد استخدام قواعد البيانات لتحسين فعالية الأعمال؟",
+                answers: [
+                    "زيادة تكرار البيانات.",
+                    "صعوبة متابعة التعاملات اليومية.",
+                    "مساعدة المدراء والموظفين على اتخاذ قرارات أفضل.",
+                    "تقليل أمن المعلومات."
+                ],
+                correctAnswer: "مساعدة المدراء والموظفين على اتخاذ قرارات أفضل."
+            },
+            {
+                question: "ماذا يمكن للمنظمات أن تستخلص من تحليل بيانات المشتريات في قواعد البيانات؟",
+                answers: [
+                    "فقط حجم المبيعات الإجمالي.",
+                    "معلومات لا قيمة لها.",
+                    "رؤى قيمة مثل أفضل السلع مبيعًا أو العملاء الأكثر فائدة.",
+                    "مشاكل في الشبكة."
+                ],
+                correctAnswer: "رؤى قيمة مثل أفضل السلع مبيعًا أو العملاء الأكثر فائدة."
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let userAnswers = [];
+        let score = 0;
+
+        const introSection = document.getElementById('intro-section');
+        const examSection = document.getElementById('exam-section');
+        const resultsSection = document.getElementById('results-section');
+
+        const startExamBtn = document.getElementById('start-exam-btn');
+        const currentQuestionNumberSpan = document.getElementById('current-question-number');
+        const totalQuestionsSpan = document.getElementById('total-questions');
+        const questionText = document.getElementById('question-text');
+        const answersContainer = document.getElementById('answers-container');
+        const nextQuestionBtn = document.getElementById('next-question-btn');
+        const submitExamBtn = document.getElementById('submit-exam-btn');
+
+        const scoreDisplay = document.getElementById('score-display');
+        const totalScoreDisplay = document.getElementById('total-score-display');
+        const resultsDetails = document.getElementById('results-details');
+        const restartExamBtn = document.getElementById('restart-exam-btn');
+
+        totalQuestionsSpan.textContent = questions.length;
+        totalScoreDisplay.textContent = questions.length;
+
+        function startExam() {
+            introSection.classList.add('section-hidden');
+            examSection.classList.remove('section-hidden');
+            currentQuestionIndex = 0;
+            userAnswers = Array(questions.length).fill(null); // Initialize user answers array
+            score = 0;
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            const currentQuestion = questions[currentQuestionIndex];
+            currentQuestionNumberSpan.textContent = currentQuestionIndex + 1;
+            questionText.textContent = currentQuestion.question;
+            answersContainer.innerHTML = ''; // Clear previous answers
+
+            currentQuestion.answers.forEach((answer, index) => {
+                const answerDiv = document.createElement('div');
+                answerDiv.className = 'flex items-center p-3 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50 transition duration-150';
+                
+                const radioInput = document.createElement('input');
+                radioInput.type = 'radio';
+                radioInput.name = 'answer';
+                radioInput.value = answer;
+                radioInput.id = `answer-${index}`;
+                radioInput.className = 'form-radio h-5 w-5 text-indigo-600 mr-3';
+                // Pre-select if user has answered this question before
+                if (userAnswers[currentQuestionIndex] === answer) {
+                    radioInput.checked = true;
+                }
+
+                const label = document.createElement('label');
+                label.htmlFor = `answer-${index}`;
+                label.className = 'text-lg text-gray-700 flex-1 cursor-pointer';
+                label.textContent = answer;
+
+                answerDiv.appendChild(radioInput);
+                answerDiv.appendChild(label);
+                answersContainer.appendChild(answerDiv);
+            });
+
+            // Show submit button on the last question
+            if (currentQuestionIndex === questions.length - 1) {
+                nextQuestionBtn.classList.add('section-hidden');
+                submitExamBtn.classList.remove('section-hidden');
+            } else {
+                nextQuestionBtn.classList.remove('section-hidden');
+                submitExamBtn.classList.add('section-hidden');
+            }
+        }
+
+        function nextQuestion() {
+            const selectedAnswer = document.querySelector('input[name="answer"]:checked');
+            if (selectedAnswer) {
+                userAnswers[currentQuestionIndex] = selectedAnswer.value;
+            } else {
+                userAnswers[currentQuestionIndex] = null; // Store null if no answer selected
+            }
+            
+            currentQuestionIndex++;
+
+            if (currentQuestionIndex < questions.length) {
+                loadQuestion();
+            } else {
+                calculateResults();
+                displayResults();
+            }
+        }
+
+        function calculateResults() {
+            score = 0;
+            questions.forEach((q, index) => {
+                if (userAnswers[index] === q.correctAnswer) {
+                    score++;
+                }
+            });
+        }
+
+        function displayResults() {
+            examSection.classList.add('section-hidden');
+            resultsSection.classList.remove('section-hidden');
+            scoreDisplay.textContent = score;
+
+            resultsDetails.innerHTML = ''; // Clear previous results
+
+            questions.forEach((q, index) => {
+                const resultItem = document.createElement('div');
+                resultItem.className = 'p-4 rounded-lg shadow-sm';
+                
+                const isCorrect = userAnswers[index] === q.correctAnswer;
+                resultItem.classList.add(isCorrect ? 'bg-green-50' : 'bg-red-50');
+                resultItem.innerHTML = `
+                    <p class="font-semibold text-lg mb-2">${index + 1}. ${q.question}</p>
+                    <p class="text-gray-700">إجابتك: <span class="${isCorrect ? 'text-green-700' : 'text-red-700'} font-medium">${userAnswers[index] || 'لم يتم الإجابة'}</span> ${isCorrect ? '✅' : '❌'}</p>
+                    ${!isCorrect ? `<p class="text-green-700">الإجابة الصحيحة: <span class="font-medium">${q.correctAnswer}</span></p>` : ''}
+                `;
+                resultsDetails.appendChild(resultItem);
+            });
+        }
+
+        function restartExam() {
+            resultsSection.classList.add('section-hidden');
+            introSection.classList.remove('section-hidden');
+            currentQuestionIndex = 0;
+            userAnswers = [];
+            score = 0;
+        }
+
+        // Event Listeners
+        startExamBtn.addEventListener('click', startExam);
+        nextQuestionBtn.addEventListener('click', nextQuestion);
+        submitExamBtn.addEventListener('click', nextQuestion); // Submit uses same logic as next to process last question
+        restartExamBtn.addEventListener('click', restartExam);
+    </script>
+</body>
+</html>
